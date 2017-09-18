@@ -1,3 +1,6 @@
 .chat-panel {
     height: 500px;
 }
+.s-content .panel .tile {
+    margin: .75rem 0;
+}

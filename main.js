@@ -155,8 +155,7 @@ function MumbleCredentialsHandler(event, arg) {
   mumbleHandler(arg["server"], arg["username"]);
 }
 
-function MumbleTextSendHandler(event, arg) {
-  console.log( 'Send Message: ' + arg['message'] );  
+function MumbleTextSendHandler(event, arg) { 
   var list = mumbleConnection.users();
   for(var key in list) {
     var user = list[key];
@@ -189,25 +188,3 @@ function mumbleHandler(serverIP, userName) {
     connection.on( 'userState', onUserState);
   });
 }
-
-
-
-
-    /*connection.on('ready', function() {
-        console.log("Ready!");
-        showMainMenu();
-        buildChannelTree(connection.rootChannel, 0);
-        console.log(tree);
-        console.log("Those were all channels!");
-        console.log("Users:");
-        var list = connection.users();
-        for(var key in list) {
-            var user = list[key];
-            console.log("  - " + user.name + " in channel " + user.channel.name);
-            if(user.name == 'Sebi') {
-              user.channel.join();
-              user.channel.sendMessage('<iframe width="560" height="315" src="https://www.youtube.com/embed/WFUMW4NvrRQ" frameborder="0" allowfullscreen></iframe>');
-            }
-        
-        console.log("\nThose were all users!");
-    });}*/
