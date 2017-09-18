@@ -1,0 +1,13 @@
+{
+    "name": "your-app",
+    "version": "0.1.0",
+    "main": "main.js",
+    "dependencies": {
+        "jitterbuffer": "^0.1.12",
+        "mumble": "^0.3.11",
+        "spectre.css": "^0.4.1"
+    },
+    "devDependencies": {
+        "electron-rebuild": "^1.6.0"
+    }
+}
