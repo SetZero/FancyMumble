@@ -1,6 +1,18 @@
+body {
+    -webkit-app-region: no-drag;
+}
+#dragZone {
+    -webkit-app-region: drag;
+    user-select: none;
+}
+
 .chat-panel {
-    height: 500px;
+    height: 90vh;
 }
 .s-content .panel .tile {
     margin: .75rem 0;
+}
+
+.tile-title {
+	margin: 0 0 0 0;
 }

@@ -138,10 +138,6 @@ function showMainMenu() {
     protocol: 'file:',
     slashes: true
   }));
-  /*win.setBounds({
-    width: 1000,
-    height: 800
-  });*/
   var bounds = win.getBounds();
   bounds.x -= 600;
   bounds.y -= 300;

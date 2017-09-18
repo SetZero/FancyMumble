@@ -40,6 +40,7 @@ const chatTemplate = new TemplateParser("renderer/templates/chat.html");
 
 $('#connectToServer').click(sendUserCredentialsToMain); //If the user clicked on Login
 $('#closeWindow').click(closeWindow);                   //If the user clicked "close window"
+$('#minimizeWindow').click(minimizeWindow);       
 $('#TextInput').keypress(mainKeypressCheck);            //If the user entered a chat message
 ipcRenderer.on('TextReceiver', MumbleTextSendHandler);  //New chat message from server
 
@@ -74,6 +75,11 @@ function sendUserCredentialsToMain() {
 function closeWindow() {
     var window = remote.getCurrentWindow();
     window.close();
+}
+
+function minimizeWindow() {
+    var window = remote.getCurrentWindow();
+    window.minimize();
 }
 
 function MumbleTextSendHandler(event, arg) {
