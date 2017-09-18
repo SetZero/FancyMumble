@@ -5,6 +5,7 @@
     "dependencies": {
         "jitterbuffer": "^0.1.12",
         "mumble": "^0.3.11",
+        "mustache": "^2.3.0",
         "spectre.css": "^0.4.1"
     },
     "devDependencies": {

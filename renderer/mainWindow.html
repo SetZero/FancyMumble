@@ -17,76 +17,86 @@
     </style>
   </head>
   <body>
-    <div class="column col-6 col-xl-12">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title h6">Chat</div>
-        </div>
-        <div class="panel-body" id="TextWindow">
-          <div class="tile">
-            <div class="tile-icon">
-              <figure class="avatar">
-                <img src="img/avatar-1.png" alt="Avatar">
-              </figure>
-            </div>
-            <div class="tile-content">
-              <p class="tile-title">Thor Odinson</p>
-              <p class="tile-subtitle">Earth's Mightiest Heroes joined forces to take on threats that were too big for any one hero to tackle...</p>
+    <div class="container">
+      <div class="columns">
+          <div class="column col-6 col-xs-12">
+            <div class="panel chat-panel">
+              <div class="panel-header text-center">
+                <figure class="avatar avatar-lg">
+                  <img src="img/avatar-2.png" alt="Avatar">
+                </figure>
+                <div class="panel-title h5 mt-10">DUMMY</div>
+              </div>
+              <nav class="panel-nav">
+                <ul class="tab tab-block">
+                  <li class="tab-item active">
+                    <a href="#panels">
+                      Server
+                    </a>
+                  </li>
+                  <li class="tab-item">
+                    <a href="#panels">
+                      Channel
+                    </a>
+                  </li>
+                  <li class="tab-item">
+                    <a href="#panels">
+                      Settings
+                    </a>
+                  </li>
+                </ul>
+              </nav>
+              <div class="panel-body">
+                <div class="tile tile-centered">
+                  <div class="tile-content">
+                    <div class="tile-title">Nooblounge.net</div>
+                    <div class="tile-subtitle">Sebi</div>
+                  </div>
+                  <div class="tile-action">
+                    <button class="btn btn-link btn-action btn-lg"><i class="icon icon-edit"></i></button>
+                  </div>
+                </div>
+                <div class="tile tile-centered">
+                  <div class="tile-content">
+                    <div class="tile-title">localhost</div>
+                    <div class="tile-subtitle">ExampleUser</div>
+                  </div>
+                  <div class="tile-action">
+                    <button class="btn btn-link btn-action btn-lg"><i class="icon icon-edit"></i></button>
+                  </div>
+                </div>
+                <div class="tile tile-centered">
+                  <div class="tile-content">
+                    <div class="tile-title">example.com</div>
+                    <div class="tile-subtitle">NotAUser</div>
+                  </div>
+                  <div class="tile-action">
+                    <button class="btn btn-link btn-action btn-lg"><i class="icon icon-edit"></i></button>
+                  </div>
+                </div>
+              </div>
+              <div class="panel-footer">
+                <button class="btn btn-primary btn-block">Add Server</button>
+              </div>
             </div>
           </div>
-          <div class="tile">
-            <div class="tile-icon">
-              <figure class="avatar">
-                <img src="img/avatar-2.png" alt="Avatar">
-              </figure>
+          <div class="column col-6 col-xs-12">
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title h6">Comments</div>
+              </div>
+              <div class="panel-body" id="TextWindow">
+                  <!--User Content-->
+              </div>
+              <div class="panel-footer">
+                <div class="input-group">
+                  <input type="text" class="form-input" placeholder="Hello" id="TextInput">
+                  <button class="btn btn-primary input-group-btn">Send</button>
+                </div>
+              </div>
             </div>
-            <div class="tile-content">
-              <p class="tile-title">Bruce Banner</p>
-              <p class="tile-subtitle">The Strategic Homeland Intervention, Enforcement, and Logistics Division...</p>
-            </div>
-          </div>
-          <div class="tile">
-            <div class="tile-icon">
-              <figure class="avatar" data-initial="TS"></figure>
-            </div>
-            <div class="tile-content">
-              <p class="tile-title">Tony Stark</p>
-              <p class="tile-subtitle">Earth's Mightiest Heroes joined forces to take on threats that were too big for any one hero to tackle...</p>
-            </div>
-          </div>
-          <div class="tile">
-            <div class="tile-icon">
-              <figure class="avatar">
-                <img src="img/avatar-4.png" alt="Avatar">
-              </figure>
-            </div>
-            <div class="tile-content">
-              <p class="tile-title">Steve Rogers</p>
-              <p class="tile-subtitle">The Strategic Homeland Intervention, Enforcement, and Logistics Division...</p>
-            </div>
-          </div>
-          <div class="tile">
-            <div class="tile-icon">
-              <figure class="avatar">
-                <img src="img/avatar-3.png" alt="Avatar">
-              </figure>
-            </div>
-            <div class="tile-content">
-              <p class="tile-title">Natasha Romanoff</p>
-              <p class="tile-subtitle">Earth's Mightiest Heroes joined forces to take on threats that were too big for any one hero to tackle...</p>
-            </div>
-          </div>
-        </div>
-        <div class="panel-footer">
-          <div class="input-group">
-            <input type="text" class="form-input" placeholder="Hello" id="TextInput">
-            <button class="btn btn-primary input-group-btn" id="TextSend">Send</button>
           </div>
         </div>
       </div>
-    </div>
-    <!--<h1>Test</h1>
-    <div id="TextWindow"></div>
-    <input id="TextInput">-->
     <script src="main.js"></script>
   </body>
