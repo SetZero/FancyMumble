@@ -16,3 +16,7 @@ body {
 .tile-title {
 	margin: 0 0 0 0;
 }
+
+.insignificant{
+    font-size: 7pt;
+}

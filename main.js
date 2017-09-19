@@ -144,6 +144,12 @@ function showMainMenu() {
   bounds.width = 1200;
   bounds.height = 600;
   win.setBounds(bounds);
+  win.webContents.on('did-finish-load', function() {
+    var sendArray = {};
+    console.log("send it!");
+    sendArray['dividerMessage'] = "Joined Channel " + mumbleConnection.user.channel.name;
+    win.webContents.send("TextEventReceiver", sendArray);
+  });
 }
 
 function MumbleCredentialsHandler(event, arg) {
@@ -152,6 +158,7 @@ function MumbleCredentialsHandler(event, arg) {
 }
 
 function MumbleTextSendHandler(event, arg) { 
+  console.log(mumbleConnection);
   var list = mumbleConnection.users();
   for(var key in list) {
     var user = list[key];

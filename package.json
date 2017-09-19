@@ -4,6 +4,7 @@
     "main": "main.js",
     "dependencies": {
         "jitterbuffer": "^0.1.12",
+        "moment": "^2.18.1",
         "mumble": "^0.3.11",
         "mustache": "^2.3.0",
         "spectre.css": "^0.4.1"

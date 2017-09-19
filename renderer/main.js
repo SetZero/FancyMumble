@@ -3,11 +3,35 @@ const ipcRenderer = require('electron').ipcRenderer;
 const remote = require('electron').remote;
 const fs = require('fs');
 const Mustache = require('mustache');
-
+const moment = require('moment');
+const EventEmitter = require('events');
 
 //-------------------
+//Classes
+//-------------------
+
+//eventListener to Handle Observer Events
+class MessageEmitter extends EventEmitter {
+    constructor() {   
+        super();
+        this.finishedLoading = false;
+        this.messageQueue = [];
+        
+        this.on('templateLoadingFinished', this.workOnQueue);
+    }
+
+    workOnQueue() {
+        console.log(this.messageQueue);
+        this.finishedLoading = true;
+        this.messageQueue.forEach(function(element) {
+            MumbleTextEventSendHandler(element[0], element[1]);   
+        });    
+    }
+}
+
+//Template Reader / Parser
 class TemplateParser {
-    constructor(path) {
+    constructor(path, finishedEmitter) {
         var sefRef = this;  //save this so we can use it in fs
         this.appendID = 0;
         fs.readFile(path, 'utf8', function read(err, data) {
@@ -15,11 +39,19 @@ class TemplateParser {
                 throw err;
             }
             sefRef.content = data;
+            if (typeof finishedEmitter !== 'undefined')
+                finishedEmitter.emit('templateLoadingFinished');
         });    
     }   
 
     appendTemplate(dom, data) {
         data['_appendID'] = "MID_" + (this.appendID++);
+        data['_currentTime'] = moment().format("HH:mm:ss");
+        this.appendDivider(dom, data);
+    }
+
+    appendDivider(dom, data) {
+        console.log(this.content);
         Mustache.parse(this.content);    
         var rendered = Mustache.render(this.content, data);
         Mustache.parse(rendered);   
@@ -34,8 +66,9 @@ class TemplateParser {
     }
 }
 //-----------------
-
-const chatTemplate = new TemplateParser("renderer/templates/chat.html");
+const mEmitter = new MessageEmitter();
+const chatMessageTemplate = new TemplateParser("renderer/templates/chat.html");
+const chatDividerTemplate = new TemplateParser("renderer/templates/chatDivider.html", mEmitter);
 
 
 $('#connectToServer').click(sendUserCredentialsToMain); //If the user clicked on Login
@@ -43,6 +76,7 @@ $('#closeWindow').click(closeWindow);                   //If the user clicked "c
 $('#minimizeWindow').click(minimizeWindow);       
 $('#TextInput').keypress(mainKeypressCheck);            //If the user entered a chat message
 ipcRenderer.on('TextReceiver', MumbleTextSendHandler);  //New chat message from server
+ipcRenderer.on('TextEventReceiver', MumbleTextEventSendHandler);  //New chat message from server
 
 function mainKeypressCheck(event) {
     //User pressed Enter
@@ -55,8 +89,8 @@ function mainKeypressCheck(event) {
         //Add Additional Information and Show it
         sendArray['username'] = "Ich";
         sendArray['ProfileReplacement'] = sendArray['username'].charAt(0);
-        chatTemplate.appendTemplate($('#TextWindow'), sendArray);
-        chatTemplate.scrollToCurrentID($('#TextWindow'));
+        chatMessageTemplate.appendTemplate($('#TextWindow'), sendArray);
+        chatMessageTemplate.scrollToCurrentID($('#TextWindow'));
         event.preventDefault();  
     }
 }
@@ -83,10 +117,21 @@ function minimizeWindow() {
 }
 
 function MumbleTextSendHandler(event, arg) {
-    //$('#TextWindow').append(arg['username'] + ': ' + arg['message']);   
     arg['ProfileReplacement'] = arg['username'].charAt(0);
-    chatTemplate.appendTemplate($('#TextWindow'), arg);
-    chatTemplate.scrollToCurrentID($('#TextWindow'));
+    chatMessageTemplate.appendTemplate($('#TextWindow'), arg);
+    chatMessageTemplate.scrollToCurrentID($('#TextWindow'));
+}
+
+function MumbleTextEventSendHandler(event, arg) {
+    if(mEmitter.finishedLoading) {
+        chatDividerTemplate.appendDivider($('#TextWindow'), arg);
+    } else {
+        var newElements = [event, arg];
+        console.log(newElements);
+        mEmitter.messageQueue.push(newElements);
+        console.log("In Queue: ");
+        console.log(mEmitter.messageQueue);
+    }
 }
 
 
