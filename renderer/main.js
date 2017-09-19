@@ -39,7 +39,7 @@ class TemplateParser {
                 throw err;
             }
             sefRef.content = data;
-            if (typeof finishedEmitter !== 'undefined')
+            if (typeof finishedEmitter === 'MessageEmitter')
                 finishedEmitter.emit('templateLoadingFinished');
         });    
     }   
@@ -135,3 +135,69 @@ function MumbleTextEventSendHandler(event, arg) {
 }
 
 
+//--------------------------------
+// File Transfer
+//-------------------------------
+$('html').on(
+    'dragover',
+    function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+});
+$('#TextWindow').on(
+    'dragenter',
+    function(e) {
+        $('.overlay').show();
+        e.preventDefault();
+        e.stopPropagation();
+});
+
+$('.overlay').click(
+    function(e) {
+        $('.overlay').hide();
+        e.preventDefault();
+        e.stopPropagation();
+});
+  
+$('.overlay').on(
+    'drop',
+    function(e){
+        if(e.originalEvent.dataTransfer){
+            if(e.originalEvent.dataTransfer.files.length) {
+                e.preventDefault();
+                e.stopPropagation();
+                /*UPLOAD FILES HERE*/
+                upload(e.originalEvent.dataTransfer.files);
+            }  
+        }
+        e.preventDefault();
+        e.stopPropagation();
+});
+
+var extensions = ["jpg", "jpeg", "png", "gif", "mp4"];
+
+function showUploadError() {
+    $('.dropzone .empty-icon .icon').addClass('icon-cross').delay(1000).queue(function(){
+        $(this).removeClass('icon-cross').dequeue();
+    });
+    $('.dropzone .empty-icon .icon').removeClass('icon-message').delay(1000).queue(function(){
+        $(this).addClass('icon-message').dequeue();
+    });
+    $('.dropzone .empty-icon .icon').css('color', 'red').delay(1000).queue(function(){
+        $(this).css('color', '#444').dequeue();
+    });
+}
+
+function upload(data) {
+    console.log(data);
+    if(typeof data[0] === 'object') {
+        if(extensions.indexOf(data[0].name.split('.').pop().toLowerCase()) >= 0) {
+            ipcRenderer.send("ImageSender", data[0].path);
+        } else {
+            showUploadError();    
+        }
+    } else {
+        console.log(typeof data[0]);
+        showUploadError();
+    }
+}

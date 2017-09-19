@@ -38,6 +38,7 @@ function createWindow () {
   win.webContents.openDevTools();
   ipcMain.on('CredentialSender', MumbleCredentialsHandler);
   ipcMain.on('TextSender', MumbleTextSendHandler);
+  ipcMain.on('ImageSender', MumbleImageSendHandler);
   //mumbleHandler();
 
   // Emitted when the window is closed.
@@ -87,6 +88,7 @@ var sessions = {};
 
 var onUserState = function( state ) {
     sessions[state.session] = state;
+    console.log(state);
 };
 
 var onVoice = function( voice ) {
@@ -100,7 +102,8 @@ var onEvent = function( data ) {
 };
 
 var onText = function( data ) {
-  var user = sessions[data.actor];
+  console.log(data);
+  var user = mumbleConnection.userBySession(data.actor);
   console.log(user.name + ':', data.message);
   var sendArray = {};
   sendArray["username"] = user.name;
@@ -169,6 +172,18 @@ function MumbleTextSendHandler(event, arg) {
       user.channel.sendMessage(arg['message']);
     }
   }
+}
+
+function MumbleImageSendHandler(event, arg) { 
+  fs.readFile( arg, function (err, data) {
+    if (err) {
+      throw err; 
+    }
+    var buffer = (new Buffer(data).toString('base64'));
+    console.log(encodeURIComponent(buffer));
+    mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
+    //mumbleConnection.user.channel.sendMessage('<video width="320" height="240" controls><source src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/></video>');
+  });
 }
 
 //---------------------------------
