@@ -7,6 +7,7 @@ const {ipcMain} = require('electron')
 const path = require('path')
 const url = require('url')
 const fs = require('fs');
+const clipboard = require('electron').clipboard
 
 var tree = "";
 
@@ -39,6 +40,7 @@ function createWindow () {
   ipcMain.on('CredentialSender', MumbleCredentialsHandler);
   ipcMain.on('TextSender', MumbleTextSendHandler);
   ipcMain.on('ImageSender', MumbleImageSendHandler);
+  ipcMain.on('ImageFileSender', MumbleImageFileSendHandler);
   //mumbleHandler();
 
   // Emitted when the window is closed.
@@ -180,12 +182,18 @@ function MumbleImageSendHandler(event, arg) {
       throw err; 
     }
     var buffer = (new Buffer(data).toString('base64'));
-    console.log(encodeURIComponent(buffer));
+    console.log("Size: " + buffer.length);
     mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
     //mumbleConnection.user.channel.sendMessage('<video width="320" height="240" controls><source src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/></video>');
   });
 }
-
+function MumbleImageFileSendHandler(event, arg) { 
+  console.log("Got it!");
+  var buffer = clipboard.readImage().toJPEG(50);
+  var buffer = (new Buffer(buffer).toString('base64'));
+  console.log("Size: " + buffer.length);
+  mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
+};
 //---------------------------------
 //Mumble Main Event
 //---------------------------------

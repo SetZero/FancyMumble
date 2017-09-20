@@ -39,7 +39,7 @@ class TemplateParser {
                 throw err;
             }
             sefRef.content = data;
-            if (typeof finishedEmitter === 'MessageEmitter')
+            if (typeof finishedEmitter !== 'undefined')
                 finishedEmitter.emit('templateLoadingFinished');
         });    
     }   
@@ -172,6 +172,19 @@ $('.overlay').on(
         }
         e.preventDefault();
         e.stopPropagation();
+});
+
+$("html").on("paste", function(e) {
+    var cb = event.clipboardData
+    console.log(cb.types);
+    if(cb.types.indexOf("Files") != -1){
+        $('.overlay').show();
+        var pastedContent = cb.files;
+        //e.preventDefault();
+       // e.stopPropagation();
+        //console.log("Sending!");
+        ipcRenderer.send("ImageFileSender", e);
+    }
 });
 
 var extensions = ["jpg", "jpeg", "png", "gif", "mp4"];
