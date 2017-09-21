@@ -8,6 +8,7 @@ const path = require('path')
 const url = require('url')
 const fs = require('fs');
 const clipboard = require('electron').clipboard
+const Fuse = require('fuse.js')
 
 var tree = "";
 
@@ -20,6 +21,79 @@ var options = {
 // be closed automatically when the JavaScript object is garbage collected.
 let win
 let mumbleConnection
+
+
+
+
+//------------------
+//Classes
+//------------------
+
+class MumbleChannelManager {
+  constructor() {
+  }
+  buildUserChannelTree() {
+    var channelInfo = {};
+    var list = mumbleConnection.users();
+    channelInfo['users'] = {channels: []};
+  
+    for(var key in list) {
+      var user = list[key];
+      var index = channelFind(channelInfo['users']['channels'],  user.channel.name);
+      if(index < 0) {
+        var index = channelInfo['users']['channels'].push({channelname: user.channel.name, channelid: user.channel.id, users: []}) - 1; 
+      }
+      console.log(index);
+      channelInfo['users']['channels'][index]['users'].push({username: user.name, userid: user.id});
+      console.log(user.id);
+    }
+    return channelInfo;
+  }
+  
+  updateUserChannelTree() {
+    var channelInfo = this.buildUserChannelTree();
+    win.webContents.send("ChannelInfoReceiver", channelInfo);
+  }
+  
+  buildChannelTree(channel, level, channellist) {
+    if(typeof channellist === 'undefined')
+      var channellist = [];
+    channellist.push({name: channel.name, id: channel.id, usercount: channel.users.length});
+    for(var c in channel.children) {
+      this.buildChannelTree(channel.children[c], level + 1, channellist);
+    } 
+    return channellist;
+  }
+
+  MumbleJoinChannelByIdHandler(event, arg) {
+    var newChannel = mumbleConnection.user.client.channelById(arg);    
+    newChannel.join();
+  }
+  MumbleChannelSearchHandler(event, arg) {
+    if(typeof this.channels === 'undefined')
+      this.channels = channelManager.buildChannelTree(mumbleConnection.rootChannel, 0); 
+
+    var options = {
+      shouldSort: true,
+      threshold: 0.3,
+      location: 0,
+      distance: 100,
+      maxPatternLength: 32,
+      minMatchCharLength: 1,
+      keys: [
+        "name"
+      ]
+    };
+    var fuse = new Fuse(this.channels, options); // "list" is the item array
+    var result = fuse.search(arg);
+    console.log(result);
+    win.webContents.send("ChannelSearchReceiver", result);
+  }
+}
+
+var channelManager = new MumbleChannelManager()
+
+//------------------
 
 function createWindow () {
   // Create the browser window.
@@ -41,6 +115,8 @@ function createWindow () {
   ipcMain.on('TextSender', MumbleTextSendHandler);
   ipcMain.on('ImageSender', MumbleImageSendHandler);
   ipcMain.on('ImageFileSender', MumbleImageFileSendHandler);
+  ipcMain.on('ChannelJoinByID', channelManager.MumbleJoinChannelByIdHandler);
+  ipcMain.on('ChannelSearchSender', channelManager.MumbleChannelSearchHandler);
   //mumbleHandler();
 
   // Emitted when the window is closed.
@@ -91,6 +167,7 @@ var sessions = {};
 var onUserState = function( state ) {
     sessions[state.session] = state;
     console.log(state);
+    channelManager.updateUserChannelTree();
 };
 
 var onVoice = function( voice ) {
@@ -122,20 +199,15 @@ var onReady = function( connection ) {
 //---------------------------------
 // Mumble Functions
 //---------------------------------
-function buildChannelTree(channel, level) {
-  for(var i = 0; i < level; i++) {
-      tree += "   ";
+function channelFind(channelInfo, find) {
+  for(var index in channelInfo) {
+    if(channelInfo[index].channelname === find) {
+      return index;
+    }
   }
-  tree += "  - " + channel.name + ": ";
-  for(var u in channel.users) {
-      var user = channel.users[u];
-      tree += user.name + ", ";
-  }
-  tree += "\n";
-  for(var c in channel.children) {
-      buildChannelTree(channel.children[c], level + 1);
-  }
+  return -1;
 }
+
 
 function showMainMenu() {
   win.loadURL(url.format({
@@ -154,6 +226,7 @@ function showMainMenu() {
     console.log("send it!");
     sendArray['dividerMessage'] = "Joined Channel " + mumbleConnection.user.channel.name;
     win.webContents.send("TextEventReceiver", sendArray);
+    channelManager.updateUserChannelTree();
   });
 }
 
@@ -164,16 +237,7 @@ function MumbleCredentialsHandler(event, arg) {
 
 function MumbleTextSendHandler(event, arg) { 
   console.log(mumbleConnection);
-  var list = mumbleConnection.users();
-  for(var key in list) {
-    var user = list[key];
-    console.log("  - " + user.name + " in channel " + user.channel.name);
-    if(user.name == 'Sebi') {
-      console.log(arg['message']);
-      user.channel.join();
-      user.channel.sendMessage(arg['message']);
-    }
-  }
+  mumbleConnection.user.channel.sendMessage(arg['message']);
 }
 
 function MumbleImageSendHandler(event, arg) { 
@@ -194,7 +258,8 @@ function MumbleImageFileSendHandler(event, arg) {
   console.log("Size: " + buffer.length);
   mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
 };
-//---------------------------------
+
+//--------------------------------
 //Mumble Main Event
 //---------------------------------
 function mumbleHandler(serverIP, userName) {

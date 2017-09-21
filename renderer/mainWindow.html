@@ -12,7 +12,7 @@
     <script>if (window.module) module = window.module;</script>
   </head>
   <body>
-		<div class="overlay">
+		<div class="overlay" id="dndoverlay">
 			<div class="empty dropzone">
 				<div class="empty-icon">
 					<i class="icon icon-message"></i>
@@ -23,7 +23,7 @@
           <button class="btn btn-primary">Send message</button>
         </div>
 			</div>	
-		</div>
+    </div>
     <div class="container s-content">
       <div class="columns">
 				<div id="dragZone" class="column col-10 col-md-8 col-mr-auto">
@@ -37,6 +37,21 @@
 						<i class="icon icon-cross"></i>
 					</button>
 				</div>		
+      </div>
+      <div class="overlay" id="channel-search-overlay">
+        <div class="form-autocomplete" id="channel-search-window">
+          <!-- autocomplete input container -->
+          <div class="form-autocomplete-input form-input">
+        
+            <!-- autocomplete real input box -->
+            <input class="form-input" id="channel-search-input" type="text" placeholder="typing here">
+          </div>
+        
+          <!-- autocomplete suggestion list -->
+          <ul class="menu" id="channel-search-found">
+            <!-- menu list chips -->
+          </ul>
+        </div>
       </div>
       <div class="columns">
           <div class="column col-3 col-xs-12">
@@ -67,68 +82,12 @@
                 </ul>
               </nav>
               <div class="panel-body">
-              	<div class="accordion">
-                <div class="accordion">
-                  <input type="radio" id="accordion-1" name="accordion-radio" hidden="" checked="">
-                  <label class="accordion-header c-hand" for="accordion-1">
-                    <i class="icon icon-arrow-right mr-1"></i>
-                    Elements
-                  </label>
-                  <div class="accordion-body">
-                    <ul class="menu menu-nav">
-                      <li class="menu-item">
-                        <a href="#accordions">Element 1</a>
-                      </li>
-                      <li class="menu-item">
-                        <a href="#accordions">Element 2</a>
-                      </li>
-                    </ul>
-                  </div>
+              	<div class="accordion" id="channellist">
+
                 </div>
-                <div class="accordion">
-                  <input type="radio" id="accordion-2" name="accordion-radio" hidden="">
-                  <label class="accordion-header c-hand" for="accordion-2">
-                    <i class="icon icon-arrow-right mr-1"></i>
-                    Layout
-                  </label>
-                  <div class="accordion-body">
-                    <ul class="menu menu-nav">
-                      <li class="menu-item">
-                        <a href="#accordions">Layout 1</a>
-                      </li>
-                      <li class="menu-item">
-                        <a href="#accordions">Layout 2</a>
-                      </li>
-                    </ul>
-                  </div>
+                <div class="panel-footer">
+                  <button class="btn btn-primary btn-block" id="openChannelSearch">Search Channel</button>
                 </div>
-                <div class="accordion">
-                  <input type="radio" id="accordion-3" name="accordion-radio" hidden="">
-                  <label class="accordion-header c-hand" for="accordion-3">
-                    <i class="icon icon-arrow-right mr-1"></i>
-                    Components
-                  </label>
-                  <div class="accordion-body">
-                    <ul class="menu menu-nav">
-                      <li class="menu-item">
-                        <figure class="avatar avatar-xs" data-initial="T">
-                					<i class="avatar-presence offline"></i>
-              					</figure>
-												Test User
-                      </li>
-                      <li class="menu-item">
-                       	<figure class="avatar avatar-xs" data-initial="A">
-                					<i class="avatar-presence online"></i>
-              					</figure>
-												Another User
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              <div class="panel-footer">
-                <button class="btn btn-primary btn-block">Add Server</button>
-              </div>
             </div>
 						</div>
           </div>

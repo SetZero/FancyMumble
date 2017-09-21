@@ -1,0 +1,25 @@
+
+    {{#users.channels}}
+    <div class="accordion">
+      <input type="checkbox" id="accordion-{{channelid}}" name="accordion-radio" hidden="">
+      <label class="accordion-header c-hand" for="accordion-{{channelid}}">
+        <i class="icon icon-arrow-right mr-1"></i>
+        {{channelname}}
+      </label>
+      <div class="accordion-body">
+        <ul class="menu menu-nav">
+            <li class="menu-item">
+                <a class="join-channel-link" href="#{{channelid}}">Join Channel</a>
+            </li>
+          {{#users}}
+          <li class="menu-item">
+            <figure class="avatar avatar-xs" data-initial="T">
+                <i class="avatar-presence offline"></i>
+            </figure>
+            {{username}}
+          </li>
+          {{/users}}
+        </ul>
+      </div>
+    </div>
+    {{/users.channels}}

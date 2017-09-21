@@ -34,3 +34,7 @@ body {
 .overlay .empty .icon {
 	    font-size: 2rem;
 }
+
+#channel-search-input {
+    -webkit-app-region: no-drag;
+}

@@ -10,52 +10,29 @@ const EventEmitter = require('events');
 //Classes
 //-------------------
 
-//eventListener to Handle Observer Events
-class MessageEmitter extends EventEmitter {
-    constructor() {   
-        super();
-        this.finishedLoading = false;
-        this.messageQueue = [];
-        
-        this.on('templateLoadingFinished', this.workOnQueue);
-    }
-
-    workOnQueue() {
-        console.log(this.messageQueue);
-        this.finishedLoading = true;
-        this.messageQueue.forEach(function(element) {
-            MumbleTextEventSendHandler(element[0], element[1]);   
-        });    
-    }
-}
-
 //Template Reader / Parser
 class TemplateParser {
     constructor(path, finishedEmitter) {
-        var sefRef = this;  //save this so we can use it in fs
         this.appendID = 0;
-        fs.readFile(path, 'utf8', function read(err, data) {
-            if (err) {
-                throw err;
-            }
-            sefRef.content = data;
-            if (typeof finishedEmitter !== 'undefined')
-                finishedEmitter.emit('templateLoadingFinished');
-        });    
+        this.content = fs.readFileSync(path, 'utf8');
     }   
-
+    workOnTemplate(data) {
+        console.log(this.content);
+        Mustache.parse(this.content);    
+        var rendered = Mustache.render(this.content, data);
+        Mustache.parse(rendered);  
+        return rendered;
+    }
     appendTemplate(dom, data) {
         data['_appendID'] = "MID_" + (this.appendID++);
         data['_currentTime'] = moment().format("HH:mm:ss");
         this.appendDivider(dom, data);
     }
-
-    appendDivider(dom, data) {
-        console.log(this.content);
-        Mustache.parse(this.content);    
-        var rendered = Mustache.render(this.content, data);
-        Mustache.parse(rendered);   
-        dom.append(rendered);
+    overrideTemplate(dom, data) {
+        dom.html(this.workOnTemplate(data));
+    }
+    appendDivider(dom, data) { 
+        dom.append(this.workOnTemplate(data));
     }
 
     scrollToCurrentID(dom) {
@@ -66,9 +43,10 @@ class TemplateParser {
     }
 }
 //-----------------
-const mEmitter = new MessageEmitter();
 const chatMessageTemplate = new TemplateParser("renderer/templates/chat.html");
-const chatDividerTemplate = new TemplateParser("renderer/templates/chatDivider.html", mEmitter);
+const ChannelViewerTemplate = new TemplateParser("renderer/templates/channellist.html");
+const ChannelSearchTemplate = new TemplateParser("renderer/templates/channelSearchElements.html");
+const chatDividerTemplate = new TemplateParser("renderer/templates/chatDivider.html");
 
 
 $('#connectToServer').click(sendUserCredentialsToMain); //If the user clicked on Login
@@ -77,6 +55,8 @@ $('#minimizeWindow').click(minimizeWindow);
 $('#TextInput').keypress(mainKeypressCheck);            //If the user entered a chat message
 ipcRenderer.on('TextReceiver', MumbleTextSendHandler);  //New chat message from server
 ipcRenderer.on('TextEventReceiver', MumbleTextEventSendHandler);  //New chat message from server
+ipcRenderer.on('ChannelInfoReceiver', MumbleChannelInfoEventSendHandler);  //New chat message from server
+ipcRenderer.on('ChannelSearchReceiver', MumbleChannelSearchHandler);  //Answer from Channel Search
 
 function mainKeypressCheck(event) {
     //User pressed Enter
@@ -123,45 +103,37 @@ function MumbleTextSendHandler(event, arg) {
 }
 
 function MumbleTextEventSendHandler(event, arg) {
-    if(mEmitter.finishedLoading) {
-        chatDividerTemplate.appendDivider($('#TextWindow'), arg);
-    } else {
-        var newElements = [event, arg];
-        console.log(newElements);
-        mEmitter.messageQueue.push(newElements);
-        console.log("In Queue: ");
-        console.log(mEmitter.messageQueue);
-    }
+    chatDividerTemplate.appendDivider($('#TextWindow'), arg);
+}
+function MumbleChannelInfoEventSendHandler(event, arg) {
+    ChannelViewerTemplate.overrideTemplate($('#channellist'), arg);
+}
+function MumbleChannelSearchHandler(event, arg) {
+    console.log(arg);
+    ChannelSearchTemplate.overrideTemplate($('#channel-search-found'), {channels: arg});
 }
 
 
 //--------------------------------
 // File Transfer
 //-------------------------------
-$('html').on(
-    'dragover',
-    function(e) {
+$('html').on('dragover', function(e) {
         e.preventDefault();
         e.stopPropagation();
 });
-$('#TextWindow').on(
-    'dragenter',
-    function(e) {
-        $('.overlay').show();
+$('#TextWindow').on('dragenter', function(e) {
+        $('#dndoverlay').show();
         e.preventDefault();
         e.stopPropagation();
 });
 
-$('.overlay').click(
-    function(e) {
-        $('.overlay').hide();
+$('#dndoverlay').click(function(e) {
+        $('#dndoverlay').hide();
         e.preventDefault();
         e.stopPropagation();
 });
   
-$('.overlay').on(
-    'drop',
-    function(e){
+$('#dndoverlay').on('drop', function(e){
         if(e.originalEvent.dataTransfer){
             if(e.originalEvent.dataTransfer.files.length) {
                 e.preventDefault();
@@ -178,11 +150,8 @@ $("html").on("paste", function(e) {
     var cb = event.clipboardData
     console.log(cb.types);
     if(cb.types.indexOf("Files") != -1){
-        $('.overlay').show();
+        $('#dndoverlay').show();
         var pastedContent = cb.files;
-        //e.preventDefault();
-       // e.stopPropagation();
-        //console.log("Sending!");
         ipcRenderer.send("ImageFileSender", e);
     }
 });
@@ -214,3 +183,29 @@ function upload(data) {
         showUploadError();
     }
 }
+
+//---------------
+//  Channel Viewer
+//---------------
+$('.panel-body, #channel-search-found').on('click', '.join-channel-link', function(e) {
+    var id = $(this).attr("href").substring(1);  
+    ipcRenderer.send("ChannelJoinByID", id);
+});
+
+$('#openChannelSearch').click(function(e) {
+    $('#channel-search-overlay').show();
+    $('#channel-search-input').focus();
+});
+$('#channel-search-window').click(function(e) {
+    event.stopPropagation();
+});
+$('#channel-search-overlay').click(function(e) {
+    $('#channel-search-overlay').hide();
+    e.preventDefault();
+    e.stopPropagation();
+});
+
+$('#channel-search-input').on('keyup', function(){
+    var searchTerm = $(this).val();    
+    ipcRenderer.send("ChannelSearchSender", searchTerm);
+});
