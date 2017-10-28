@@ -3,11 +3,15 @@
     "version": "0.1.0",
     "main": "main.js",
     "dependencies": {
+        "font-awesome": "^4.7.0",
         "fuse.js": "^3.1.0",
         "jitterbuffer": "^0.1.12",
+        "mic": "^2.1.2",
         "moment": "^2.18.1",
         "mumble": "^0.3.11",
         "mustache": "^2.3.0",
+        "node-gyp": "^3.6.2",
+        "speaker": "^0.4.0",
         "spectre.css": "^0.4.1"
     },
     "devDependencies": {

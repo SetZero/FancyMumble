@@ -7,6 +7,7 @@
       <link rel="stylesheet" href="../node_modules/spectre.css/dist/spectre-icons.min.css" />
     <link rel="stylesheet" type="text/css" href="../node_modules/spectre.css/dist/spectre-icons.min.css" />
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>    
     <script src="jQuery.js"></script>
     <script>if (window.module) module = window.module;</script>
@@ -61,6 +62,16 @@
                   <img src="img/avatar-2.png" alt="Avatar">
                 </figure>
                 <div class="panel-title h5 mt-10">DUMMY</div>
+                <div class="panel-title h10 mt-10">
+                  <span class="fa-stack fa-lg" id="self_deaf_button">
+                    <i class="fa fa-headphones fa-stack-1x" aria-hidden="true"></i>
+                    <i class="fa fa-ban fa-stack-2x text-danger" id="self_deaf_toggle"></i>
+                  </span>
+                  <span class="fa-stack fa-lg" id="self_mute_button">
+                    <i class="fa fa-microphone fa-stack-1x" aria-hidden="true"></i>
+                    <i class="fa fa-ban fa-stack-2x text-danger" id="self_mute_toggle"></i>
+                  </span>
+                </div>
               </div>
               <nav class="panel-nav">
                 <ul class="tab tab-block">

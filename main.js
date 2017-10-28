@@ -9,8 +9,11 @@ const url = require('url')
 const fs = require('fs');
 const clipboard = require('electron').clipboard
 const Fuse = require('fuse.js')
+const Speaker = require('speaker')
+const mic = require('mic')
 
 var tree = "";
+var userInputGain = 5.5;
 
 //Mumble Options 
 var options = {
@@ -21,6 +24,8 @@ var options = {
 // be closed automatically when the JavaScript object is garbage collected.
 let win
 let mumbleConnection
+let micInputStream
+let mumbleInputStream
 
 
 
@@ -43,9 +48,7 @@ class MumbleChannelManager {
       if(index < 0) {
         var index = channelInfo['users']['channels'].push({channelname: user.channel.name, channelid: user.channel.id, users: []}) - 1; 
       }
-      console.log(index);
       channelInfo['users']['channels'][index]['users'].push({username: user.name, userid: user.id});
-      console.log(user.id);
     }
     return channelInfo;
   }
@@ -65,10 +68,28 @@ class MumbleChannelManager {
     return channellist;
   }
 
+
+
   MumbleJoinChannelByIdHandler(event, arg) {
+    console.log()
     var newChannel = mumbleConnection.user.client.channelById(arg);    
-    newChannel.join();
+    try {
+      newChannel.join();
+      MumbleChannelManager.showJoinMessage(newChannel.name);
+    }
+    catch(err) {
+      console.log("Failed to join Channel!");
+    }
   }
+
+  static showJoinMessage(ChannelName) {
+    if (typeof ChannelName === 'undefined') { ChannelName = mumbleConnection.user.channel.name; }
+    var sendArray = {};
+    sendArray['dividerMessage'] = "Joined Channel " + ChannelName;
+    win.webContents.send("TextEventReceiver", sendArray);
+    return true;
+  }
+  
   MumbleChannelSearchHandler(event, arg) {
     if(typeof this.channels === 'undefined')
       this.channels = channelManager.buildChannelTree(mumbleConnection.rootChannel, 0); 
@@ -117,6 +138,7 @@ function createWindow () {
   ipcMain.on('ImageFileSender', MumbleImageFileSendHandler);
   ipcMain.on('ChannelJoinByID', channelManager.MumbleJoinChannelByIdHandler);
   ipcMain.on('ChannelSearchSender', channelManager.MumbleChannelSearchHandler);
+  ipcMain.on('UserVoiceStateChanged', UserVoiceStateHandler);
   //mumbleHandler();
 
   // Emitted when the window is closed.
@@ -166,14 +188,11 @@ var sessions = {};
 
 var onUserState = function( state ) {
     sessions[state.session] = state;
-    console.log(state);
     channelManager.updateUserChannelTree();
 };
 
-var onVoice = function( voice ) {
-  //console.log( 'Mixed voice' );
-
-  var pcmData = voice;
+var onMumbleError = function( state ) {
+    console.log("Failed to execute: " + state + "\n");
 };
 
 var onEvent = function( data ) {
@@ -193,9 +212,41 @@ var onText = function( data ) {
 
 var onReady = function( connection ) {
   console.log("Ready!");
+  const speaker = new Speaker({
+    channels: 1,          // 2 channels
+    bitDepth: 16,         // 16-bit samples
+    sampleRate: 48000,     // 44,100 Hz sample rate
+  });
+
+  mumbleConnection.outputStream(true).pipe(speaker);
+
+  
+  var mumbleInputInstance = mic({
+    rate: '24000', //24000
+    channels: '1',
+    debug: false,
+    exitOnSilence: 2,
+    bitwidth: '16'
+  });
+  mumbleInputStream = mumbleConnection.inputStream({sampleRate: 48000, gain: userInputGain})
+  micInputStream = mumbleInputInstance.getAudioStream();
+  micInputStream.pipe(mumbleInputStream);
+  mumbleInputInstance.start();
+  micInputStream.on('silence', onMicSilence);
+  micInputStream.on('voice', onMicVoice);
   showMainMenu();  
 };
 
+
+//Microphone
+var onMicSilence = function() {
+  console.log("Got SIGNAL silence");
+  mumbleInputStream.gain = 0;
+};
+var onMicVoice = function() {
+  console.log("Got SIGNAL voice");
+  mumbleInputStream.gain = userInputGain;
+};
 //---------------------------------
 // Mumble Functions
 //---------------------------------
@@ -222,10 +273,7 @@ function showMainMenu() {
   bounds.height = 600;
   win.setBounds(bounds);
   win.webContents.on('did-finish-load', function() {
-    var sendArray = {};
-    console.log("send it!");
-    sendArray['dividerMessage'] = "Joined Channel " + mumbleConnection.user.channel.name;
-    win.webContents.send("TextEventReceiver", sendArray);
+    MumbleChannelManager.showJoinMessage();
     channelManager.updateUserChannelTree();
   });
 }
@@ -247,7 +295,11 @@ function MumbleImageSendHandler(event, arg) {
     }
     var buffer = (new Buffer(data).toString('base64'));
     console.log("Size: " + buffer.length);
-    mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
+    try {
+      mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
+    } catch(err) {
+      console.log("File error: " + err);
+    }
     //mumbleConnection.user.channel.sendMessage('<video width="320" height="240" controls><source src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/></video>');
   });
 }
@@ -256,8 +308,22 @@ function MumbleImageFileSendHandler(event, arg) {
   var buffer = clipboard.readImage().toJPEG(50);
   var buffer = (new Buffer(buffer).toString('base64'));
   console.log("Size: " + buffer.length);
-  mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
+  try {
+    mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
+  } catch(err) {
+    console.log("File error: " + err);
+  }
 };
+
+//---------------------------
+// Audio Control
+//--------------------------
+
+function UserVoiceStateHandler(event, arg) {
+  mumbleConnection.user.setSelfDeaf(arg['deafed']);
+  if(!arg['deafed'])
+    mumbleConnection.user.setSelfMute(arg['muted']);
+}
 
 //--------------------------------
 //Mumble Main Event
@@ -273,9 +339,10 @@ function mumbleHandler(serverIP, userName) {
     connection.authenticate( userName );
     connection.on( 'initialized', onInit );
     connection.on( 'ready', onReady );
-    connection.on( 'voice',  onVoice );
-    connection.on( 'protocol-in', onEvent);
+    //connection.on( 'voice',  onVoice );
+    //connection.on( 'protocol-in', onEvent);
     connection.on( 'textMessage', onText);
     connection.on( 'userState', onUserState);
+    connection.on( 'error', onMumbleError);
   });
 }

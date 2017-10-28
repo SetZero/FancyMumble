@@ -209,3 +209,51 @@ $('#channel-search-input').on('keyup', function(){
     var searchTerm = $(this).val();    
     ipcRenderer.send("ChannelSearchSender", searchTerm);
 });
+
+//----------
+// Audio Control
+//---------
+muted = false;
+deafed = false;
+$('#self_deaf_toggle').hide();
+$('#self_mute_toggle').hide();
+
+$('#self_deaf_button').click(function() {
+    deafed = !deafed;
+
+    if(deafed) {
+        $('#self_deaf_toggle').show();
+        $('#self_mute_toggle').show();
+        muted = true;
+    }
+    else {
+        $('#self_deaf_toggle').hide();
+        if(muted) {
+            $('#self_mute_toggle').show();
+        } else {
+            $('#self_mute_toggle').hide();
+        }
+    }
+    
+    UserVoiceState = {};
+    UserVoiceState['muted'] = muted;
+    UserVoiceState['deafed'] = deafed;
+    ipcRenderer.send("UserVoiceStateChanged", UserVoiceState);
+});
+
+$('#self_mute_button').click(function() {
+    muted = !muted;
+
+    if(muted)
+        $('#self_mute_toggle').show();
+    else {
+        $('#self_mute_toggle').hide();
+        $('#self_deaf_toggle').hide();
+        deafed = false;
+    }
+
+    UserVoiceState = {};
+    UserVoiceState['muted'] = muted;
+    UserVoiceState['deafed'] = deafed;
+    ipcRenderer.send("UserVoiceStateChanged", UserVoiceState);
+});
