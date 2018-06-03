@@ -5,16 +5,16 @@
     "dependencies": {
         "font-awesome": "^4.7.0",
         "fuse.js": "^3.1.0",
-        "jitterbuffer": "^0.1.12",
+        "jitterbuffer": "^0.1.14",
         "mic": "^2.1.2",
-        "moment": "^2.18.1",
-        "mumble": "^0.3.11",
+        "moment": "^2.22.2",
+        "mumble": "^0.3.15",
         "mustache": "^2.3.0",
         "node-gyp": "^3.6.2",
-        "speaker": "^0.4.0",
-        "spectre.css": "^0.4.1"
+        "speaker": "^0.4.1",
+        "spectre.css": "^0.5.1"
     },
     "devDependencies": {
-        "electron-rebuild": "^1.6.0"
+        "electron-rebuild": "^1.7.3"
     }
 }
