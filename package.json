@@ -1,5 +1,5 @@
 {
-    "name": "your-app",
+    "name": "fancy-mumble",
     "version": "0.1.0",
     "main": "main.js",
     "dependencies": {
@@ -14,7 +14,10 @@
         "speaker": "^0.4.1",
         "spectre.css": "^0.5.1"
     },
-    "devDependencies": {
+    "devDependencies": { 
         "electron-rebuild": "^1.7.3"
+    },
+    "scripts": {
+        "rebuild": "electron-rebuild -f -w fancy-mumble"
     }
 }
