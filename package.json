@@ -3,6 +3,7 @@
     "version": "0.1.0",
     "main": "main.js",
     "dependencies": {
+        "electron": "^2.0.2",
         "font-awesome": "^4.7.0",
         "fuse.js": "^3.1.0",
         "jitterbuffer": "^0.1.14",
@@ -14,7 +15,7 @@
         "speaker": "^0.4.1",
         "spectre.css": "^0.5.1"
     },
-    "devDependencies": { 
+    "devDependencies": {
         "electron-rebuild": "^1.7.3"
     },
     "scripts": {

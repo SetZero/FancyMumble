@@ -18,8 +18,8 @@ class TemplateParser {
     }   
     workOnTemplate(data) {
         console.log(this.content);
-        Mustache.parse(this.content);    
-        var rendered = Mustache.render(this.content, data);
+        Mustache.parse(this.content);
+        const rendered = Mustache.render(this.content, data);
         Mustache.parse(rendered);  
         return rendered;
     }
@@ -60,8 +60,8 @@ ipcRenderer.on('ChannelSearchReceiver', MumbleChannelSearchHandler);  //Answer f
 
 function mainKeypressCheck(event) {
     //User pressed Enter
-    if (event.which == 13) {
-        var sendArray = {};
+    if (event.which === 13) {
+        const sendArray = {};
         sendArray['message'] = $('#TextInput').val();
         $('#TextInput').val('');
         //Send to main js
@@ -77,7 +77,7 @@ function mainKeypressCheck(event) {
 
 function sendUserCredentialsToMain() {
     $(this).addClass("loading");
-    var sendArray = {};
+    const sendArray = {};
     sendArray['username'] = $('#loginUsername').val();
     sendArray['server'] = $('#loginServer').val();
     console.log("Send: ");
@@ -87,12 +87,12 @@ function sendUserCredentialsToMain() {
 }
 
 function closeWindow() {
-    var window = remote.getCurrentWindow();
+    const window = remote.getCurrentWindow();
     window.close();
 }
 
 function minimizeWindow() {
-    var window = remote.getCurrentWindow();
+    const window = remote.getCurrentWindow();
     window.minimize();
 }
 
@@ -156,7 +156,7 @@ $("html").on("paste", function(e) {
     }
 });
 
-var extensions = ["jpg", "jpeg", "png", "gif", "mp4"];
+const extensions = ["jpg", "jpeg", "png", "gif", "mp4"];
 
 function showUploadError() {
     $('.dropzone .empty-icon .icon').addClass('icon-cross').delay(1000).queue(function(){
@@ -188,7 +188,7 @@ function upload(data) {
 //  Channel Viewer
 //---------------
 $('.panel-body, #channel-search-found').on('click', '.join-channel-link', function(e) {
-    var id = $(this).attr("href").substring(1);  
+    const id = $(this).attr("href").substring(1);
     ipcRenderer.send("ChannelJoinByID", id);
 });
 
@@ -206,15 +206,15 @@ $('#channel-search-overlay').click(function(e) {
 });
 
 $('#channel-search-input').on('keyup', function(){
-    var searchTerm = $(this).val();    
+    const searchTerm = $(this).val();
     ipcRenderer.send("ChannelSearchSender", searchTerm);
 });
 
 //----------
 // Audio Control
 //---------
-muted = false;
-deafed = false;
+let muted = false;
+let deafed = false;
 $('#self_deaf_toggle').hide();
 $('#self_mute_toggle').hide();
 
