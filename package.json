@@ -7,9 +7,10 @@
         "font-awesome": "^4.7.0",
         "fuse.js": "^3.1.0",
         "jitterbuffer": "^0.1.14",
+        "jsdom": "^14.0.0",
         "mic": "^2.1.2",
         "moment": "^2.22.2",
-        "mumble": "^0.3.15",
+        "mumble": "^0.3.20",
         "mustache": "^2.3.0",
         "node-gyp": "^3.6.2",
         "speaker": "^0.4.1",
@@ -19,6 +20,7 @@
         "electron-rebuild": "^1.7.3"
     },
     "scripts": {
-        "rebuild": "electron-rebuild -f -w fancy-mumble"
+        "rebuild": "electron-rebuild -f -w fancy-mumble",
+        "start": "electron ."
     }
 }

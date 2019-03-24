@@ -8,14 +8,16 @@ const path = require('path');
 const url = require('url');
 const fs = require('fs');
 const clipboard = require('electron').clipboard;
-const Fuse = require('fuse.js');
 const Speaker = require('speaker');
 const mic = require('mic');
+const mime = require('mime-types');
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 
 const tree = "";
 const userInputGain = 5.5;
 
-//Mumble Options 
+//Mumble Options
 const options = {
     key: fs.readFileSync('certs/key.pem'),
     cert: fs.readFileSync('certs/cert.pem')
@@ -27,97 +29,14 @@ let mumbleConnection;
 let micInputStream;
 let mumbleInputStream;
 
+const MumbleChannelManager = require("./src/ChannelManager.js");
+
 
 //------------------
 //Classes
 
 //------------------
-
-class MumbleChannelManager {
-    constructor() {
-    }
-
-    static showJoinMessage(ChannelName) {
-        if (typeof ChannelName === 'undefined') {
-            ChannelName = mumbleConnection.user.channel.name;
-        }
-        const sendArray = {};
-        sendArray['dividerMessage'] = "Joined Channel " + ChannelName;
-        win.webContents.send("TextEventReceiver", sendArray);
-        return true;
-    }
-
-    static buildUserChannelTree() {
-        const channelInfo = {};
-        const list = mumbleConnection.users();
-        channelInfo['users'] = {channels: []};
-
-        for (let key in list) {
-            let user = list[key];
-            let index = channelFind(channelInfo['users']['channels'], user.channel.name);
-            if (index < 0) {
-                index = channelInfo['users']['channels'].push({
-                    channelname: user.channel.name,
-                    channelid: user.channel.id,
-                    users: []
-                }) - 1;
-            }
-            channelInfo['users']['channels'][index]['users'].push({username: user.name, userid: user.id});
-        }
-        return channelInfo;
-    }
-
-    static MumbleJoinChannelByIdHandler(event, arg) {
-        console.log();
-        let newChannel = mumbleConnection.user.client.channelById(arg);
-        try {
-            newChannel.join();
-            MumbleChannelManager.showJoinMessage(newChannel.name);
-        }
-        catch (err) {
-            console.log("Failed to join Channel!");
-        }
-    }
-
-    updateUserChannelTree() {
-        let channelInfo = MumbleChannelManager.buildUserChannelTree();
-        win.webContents.send("ChannelInfoReceiver", channelInfo);
-    }
-
-    buildChannelTree(channel, level, channellist) {
-        if (typeof channellist === 'undefined') {
-            let channellist = [];
-        }
-        channellist.push({name: channel.name, id: channel.id, usercount: channel.users.length});
-        for (let c in channel.children) {
-            this.buildChannelTree(channel.children[c], level + 1, channellist);
-        }
-        return channellist;
-    }
-
-    MumbleChannelSearchHandler(event, arg) {
-        if (typeof this.channels === 'undefined')
-            this.channels = channelManager.buildChannelTree(mumbleConnection.rootChannel, 0);
-
-        let options = {
-            shouldSort: true,
-            threshold: 0.3,
-            location: 0,
-            distance: 100,
-            maxPatternLength: 32,
-            minMatchCharLength: 1,
-            keys: [
-                "name"
-            ]
-        };
-        let fuse = new Fuse(this.channels, options); // "list" is the item array
-        const result = fuse.search(arg);
-        console.log(result);
-        win.webContents.send("ChannelSearchReceiver", result);
-    }
-}
-
-let channelManager = new MumbleChannelManager();
+let channelManager;
 
 
 //------------------
@@ -142,8 +61,6 @@ function createWindow() {
     ipcMain.on('TextSender', MumbleTextSendHandler);
     ipcMain.on('ImageSender', MumbleImageSendHandler);
     ipcMain.on('ImageFileSender', MumbleImageFileSendHandler);
-    ipcMain.on('ChannelJoinByID', MumbleChannelManager.MumbleJoinChannelByIdHandler);
-    ipcMain.on('ChannelSearchSender', channelManager.MumbleChannelSearchHandler);
     ipcMain.on('UserVoiceStateChanged', UserVoiceStateHandler);
     //mumbleHandler();
 
@@ -174,7 +91,7 @@ app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (win === null) {
-        createWindow()
+        createWindow();
     }
 });
 
@@ -187,7 +104,7 @@ const onInit = function (connection) {
     console.log('Connection initialized');
     const user = connection.users[connection.sessionId];
     const channel = connection.channels[0];
-    console.log(channel);
+    //console.log(channel);
 };
 
 const sessions = {};
@@ -206,12 +123,30 @@ const onEvent = function (data) {
 };
 
 const onText = function (data) {
-    console.log(data);
-    const user = mumbleConnection.userBySession(data.actor);
-    console.log(user.name + ':', data.message);
+    const dom = new JSDOM(data.message);
+    let children = dom.window.document.getElementsByTagName('meta');
+    let isVideo = false;
+    let src;
+
     const sendArray = {};
-    sendArray["username"] = user.name;
-    sendArray["message"] = data.message;
+    const user = mumbleConnection.userBySession(data.actor);
+    sendArray.username = user.name;
+
+    for(let i = 0; i < children.length; i++) {
+        let tag = children[i].getAttribute("http-equiv");
+        if(tag === 'isVideo') isVideo = true;
+        src = dom.window.document.getElementsByTagName('img')[0].getAttribute("src");
+        src = src.replace('data:image/PNG;base64,', '');
+        if(isVideo) break;
+    }
+
+    if(isVideo) {
+        sendArray.message = '<video width="320" height="240" controls><source src="data:video/mp4;base64,' + src + ' "/></video>';
+    } else {
+        sendArray.message = data.message;
+    }
+
+    //console.log(data);
 
     win.webContents.send("TextReceiver", sendArray);
 };
@@ -255,14 +190,7 @@ const onReady = function (connection) {
 //---------------------------------
 // Mumble Functions
 //---------------------------------
-function channelFind(channelInfo, find) {
-    for (const index in channelInfo) {
-        if (channelInfo[index].channelname === find) {
-            return index;
-        }
-    }
-    return -1;
-}
+
 
 
 function showMainMenu() {
@@ -278,7 +206,7 @@ function showMainMenu() {
     bounds.height = 600;
     win.setBounds(bounds);
     win.webContents.on('did-finish-load', function () {
-        MumbleChannelManager.showJoinMessage();
+        channelManager.showJoinMessage();
         channelManager.updateUserChannelTree();
     });
 }
@@ -289,11 +217,11 @@ function MumbleCredentialsHandler(event, arg) {
 }
 
 function MumbleTextSendHandler(event, arg) {
-    console.log(mumbleConnection);
     mumbleConnection.user.channel.sendMessage(arg['message']);
 }
 
 function MumbleImageSendHandler(event, arg) {
+    console.log("Type: " + arg);
     fs.readFile(arg, function (err, data) {
         if (err) {
             throw err;
@@ -301,7 +229,20 @@ function MumbleImageSendHandler(event, arg) {
         const buffer = (new Buffer(data).toString('base64'));
         console.log("Size: " + buffer.length);
         try {
-            mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
+            let mime_type = mime.lookup(arg);
+            switch(mime_type) {
+                case 'image/jpeg':
+                case 'image/png':
+                case 'image/bmp':
+                case 'image/gif':
+                    mumbleConnection.user.channel.sendMessage('<img src="data:' + mime_type + ';base64,' + encodeURIComponent(buffer) + ' "/>');
+                    break;
+                case 'video/mp4':
+                    mumbleConnection.user.channel.sendMessage('<meta http-equiv="isVideo" content="true" /><img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + '"/>');
+                    console.log("Sending Video...");
+                    break;
+                default:
+            }
         } catch (err) {
             console.log("File error: " + err);
         }
@@ -311,9 +252,30 @@ function MumbleImageSendHandler(event, arg) {
 
 function MumbleImageFileSendHandler(event, arg) {
     console.log("Got it!");
-    let buffer = clipboard.readImage().toJPEG(50);
-    buffer = (new Buffer(buffer).toString('base64'));
-    console.log("Size: " + buffer.length);
+    let found = false;
+    let maximumSize = 100 * 1024;
+    let inBetween = 1024;
+
+    let minQuality = 0;
+    let maximumQuality = 100;
+    let buffer;
+    while(minQuality <= maximumQuality) {
+        let middle = minQuality + ((maximumQuality - minQuality) / 2);
+        middle = middle | 0;
+        buffer = clipboard.readImage().toJPEG(middle);
+        buffer = (new Buffer(buffer).toString('base64'));
+        console.log("Size: " + (buffer.length / 1024));
+        if(buffer.length  <= maximumSize - inBetween && Math.max(0, buffer.length) > maximumSize - inBetween) {
+            break;
+        } else {
+            if((buffer.length) > maximumSize) {
+                maximumQuality = middle - 1;
+            } else {
+                minQuality = middle + 1;
+            }
+        }
+    }
+    console.log("Size: " + (buffer.length / 1024));
     try {
         mumbleConnection.user.channel.sendMessage('<img src="data:image/PNG;base64,' + encodeURIComponent(buffer) + ' "/>');
     } catch (err) {
@@ -344,6 +306,14 @@ function mumbleHandler(serverIP, userName) {
         console.log('Connected');
 
         mumbleConnection = connection;
+        channelManager = new MumbleChannelManager(mumbleConnection, win);
+        ipcMain.on('ChannelSearchSender', (event, arg) => {
+             channelManager.MumbleChannelSearchHandler(event, arg);
+        });
+        ipcMain.on('ChannelJoinByID', (event, arg) => {
+            channelManager.MumbleJoinChannelByIdHandler(event, arg);
+        });
+
         connection.authenticate(userName);
         connection.on('initialized', onInit);
         connection.on('ready', onReady);
